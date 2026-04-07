@@ -56,7 +56,7 @@ export default function AdminLayout() {
         <div style={{ padding: "1.5rem 1.75rem", borderTop: "1px solid #1F2937" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
             <div style={{ color: "#6B7280", fontSize: "0.75rem", wordBreak: "break-all" }}>{user?.email}</div>
-            <div style={{ background: "rgba(255,255,255,0.05)", padding: "2px 6px", borderRadius: "4px", color: "#9CA3AF", fontSize: "0.65rem", fontWeight: "bold" }}>v1.0.1</div>
+            <div style={{ background: "rgba(255,255,255,0.05)", padding: "2px 6px", borderRadius: "4px", color: "#9CA3AF", fontSize: "0.65rem", fontWeight: "bold" }}>v1.0.2</div>
           </div>
           <button
             onClick={handleLogout}
