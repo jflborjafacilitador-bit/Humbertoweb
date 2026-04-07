@@ -428,6 +428,152 @@ input, select, textarea {
   }
 }
 
+/* ─── Google Maps Autocomplete Dropdown ─────────────────────────────────────
+   El .pac-container de Google se inyecta en el body pero necesita z-index
+   mayor que nuestros modales (z-index: 1000) para ser clickeable.
+   ─────────────────────────────────────────────────────────────────────────── */
+.pac-container {
+  z-index: 99999 !important;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  font-family: 'Inter', sans-serif;
+  margin-top: 4px;
+}
+
+.pac-item {
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  color: #374151;
+  cursor: pointer;
+  border-top: 1px solid #F3F4F6;
+  transition: background 0.15s ease;
+}
+
+.pac-item:hover {
+  background: #F9FAFB;
+}
+
+.pac-item-query {
+  font-weight: 600;
+  color: #111827;
+}
+
+.pac-matched {
+  color: #D4AF37;
+  font-weight: 700;
+}
+
+.pac-icon {
+  margin-top: 8px;
+}
+
+/* ─── Sistema Dual de Propiedades ───────────────────────────────────────────
+   Cards del selector de tipo, badges y estilos del calendario de eventos
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Selector de tipo — cards hover */
+.tipo-card:hover {
+  border-color: #111827 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Badges de operación en listado */
+.badge-venta {
+  background: #111827;
+  color: #FFF;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.badge-evento {
+  background: linear-gradient(135deg, #D4AF37, #F59E0B);
+  color: #111827;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* Calendario — días disponibles y no disponibles */
+.rbc-day-bg.disponible {
+  background-color: rgba(212, 175, 55, 0.06);
+  border-left: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.rbc-day-bg.no-disponible {
+  background-color: #F3F4F6;
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.04) 4px,
+    rgba(0, 0, 0, 0.04) 8px
+  );
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Pills de días en formulario de evento */
+.dia-pill {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 2px solid #E5E7EB;
+  background: #F9FAFB;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dia-pill.selected {
+  border-color: #D4AF37;
+  background: linear-gradient(135deg, #D4AF37, #F59E0B);
+  color: #111827;
+}
+
+.dia-pill:hover:not(.selected) {
+  border-color: #D1D5DB;
+  background: #F3F4F6;
+}
+
+/* Banner informativo de la propiedad en calendario */
+.prop-info-banner {
+  background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+  border: 1px solid #FDE68A;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+/* Alerta de slot no disponible */
+.slot-alert {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: 10px;
+  padding: 0.875rem 1.25rem;
+  margin-bottom: 1rem;
+  color: #DC2626;
+  font-weight: 600;
+  font-size: 0.9rem;
+  animation: slideInAlert 0.3s ease-out;
+}
+
+@keyframes slideInAlert {
+  from { transform: translateY(-8px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
 /* Animación pulso suave para botón WhatsApp CTA */
 @keyframes whatsapp-pulse {
   0%   { box-shadow: 0 8px 24px rgba(37,211,102,0.35); }
