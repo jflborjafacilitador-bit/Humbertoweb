@@ -6,6 +6,7 @@ import App from "./App"
 import AdminLogin from "./admin/AdminLogin"
 import AdminLayout from "./admin/AdminLayout"
 import Propiedades from "./admin/Propiedades"
+import CalendarioAdmin from "./admin/CalendarioAdmin"
 import Leads from "./admin/Leads"
 import "./index.css"
 
@@ -25,6 +26,7 @@ function Root() {
           <Route index element={<AdminLogin />} />
           <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
             <Route path="propiedades" element={<Propiedades />} />
+            <Route path="calendario" element={<CalendarioAdmin />} />
             <Route path="leads" element={<Leads />} />
           </Route>
         </Route>

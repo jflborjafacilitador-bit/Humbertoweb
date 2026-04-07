@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { collection, onSnapshot } from "firebase/firestore"
+import { db } from "./firebase/config"
 import './index.css'
 import './components.css'
 
@@ -219,6 +221,19 @@ function Hero() {
    PROPERTIES
    ========================================================= */
 function Properties({ onContactClick }: { onContactClick: () => void }) {
+  const [propiedadesDB, setPropiedadesDB] = useState<any[]>([])
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "propiedades"), (snap) => {
+      const data: any[] = []
+      snap.forEach(doc => data.push({ id: doc.id, ...doc.data() }))
+      setPropiedadesDB(data)
+    })
+    return unsub
+  }, [])
+
+  const dataToShow = propiedadesDB.length > 0 ? propiedadesDB : PROPERTIES
+
   return (
     <section className="section" id="propiedades">
       <div className="container">
@@ -234,30 +249,54 @@ function Properties({ onContactClick }: { onContactClick: () => void }) {
         </div>
 
         <div className="properties-grid">
-          {PROPERTIES.map((p) => (
+          {dataToShow.map((p) => {
+            const isRenta = (p.operacion || p.type) === "Renta";
+            const imageUrl = (p.imagenes && p.imagenes.length > 0) ? p.imagenes[0] : p.image;
+            
+            return (
             <div key={p.id} className="property-card">
               <div className="property-card-image">
-                <img src={p.image} alt={p.name} loading="lazy" />
-                <span className="property-card-badge">{p.type}</span>
+                <img src={imageUrl || "https://images.unsplash.com/photo-1560518883-ce09059eeefa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"} alt={p.nombre || p.name} loading="lazy" style={{ width: "100%", height: "250px", objectFit: "cover" }} />
+                <span className="property-card-badge">{p.operacion || p.type || "Venta"}</span>
               </div>
               <div className="property-card-body">
-                <div className="property-card-price">{p.price}</div>
-                <div className="property-card-name">{p.name}</div>
+                <div className="property-card-price" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  {p.precio || p.price}
+                  <span style={{ fontSize: "0.8rem", color: "#6B7280", fontWeight: 400 }}>{p.tipo || "Inmueble"}</span>
+                </div>
+                <div className="property-card-name" style={{ fontSize: "1.1rem" }}>{p.nombre || p.name}</div>
                 <div className="property-card-location">
                   <MapPinIcon />
-                  {p.location}
+                  {p.ubicacion || p.location}
                 </div>
+                
+                {isRenta && p.disponibleDesde && (
+                  <div style={{ marginTop: "0.5rem", marginBottom: "0.5rem", padding: "0.5rem", background: "#EFF6FF", borderRadius: "6px", border: "1px solid #BFDBFE" }}>
+                    <span style={{ fontSize: "0.75rem", color: "#1E3A8A", fontWeight: 600, display: "block", marginBottom: "2px" }}>📅 Disponibilidad:</span>
+                    <span style={{ fontSize: "0.8rem", color: "#1D4ED8" }}>Del {p.disponibleDesde.split("-").reverse().join("/")} al {p.disponibleHasta?.split("-").reverse().join("/") || "Sin fecha"}</span>
+                  </div>
+                )}
+
                 <div className="property-card-specs">
-                  <span className="property-spec"><BedIcon /> {p.beds} Rec</span>
-                  <span className="property-spec"><BathIcon /> {p.baths} Baños</span>
-                  <span className="property-spec"><AreaIcon /> {p.area}</span>
+                  <span className="property-spec"><BedIcon /> {p.recamaras || p.beds || "0"} Rec</span>
+                  <span className="property-spec"><BathIcon /> {p.banos || p.baths || "0"} Baños</span>
+                  <span className="property-spec"><AreaIcon /> {p.m2Terreno || p.m2Construccion ? `${p.m2Terreno || p.m2Construccion}m²` : p.area}</span>
                 </div>
+                
+                {p.amenidades && p.amenidades.length > 0 && (
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "1rem" }}>
+                    {p.amenidades.slice(0, 3).map((am: string, i: number) => (
+                      <span key={i} style={{ fontSize: "0.65rem", padding: "2px 6px", background: "#F3F4F6", color: "#4B5563", borderRadius: "100px", fontWeight: 500 }}>{am}</span>
+                    ))}
+                  </div>
+                )}
+
                 <button className="btn btn-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={onContactClick}>
                   Solicitar Información
                 </button>
               </div>
             </div>
-          ))}
+          )})}
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 'var(--space-10)' }}>

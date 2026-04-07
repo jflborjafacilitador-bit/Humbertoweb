@@ -23,6 +23,7 @@ export default function AdminLayout() {
         <nav style={{ flex: 1, padding: "0 1rem" }}>
           {[
             { to: "/admin/propiedades", label: "🏠 Propiedades" },
+            { to: "/admin/calendario", label: "📅 Calendario" },
             { to: "/admin/leads", label: "📋 Leads" },
           ].map(item => (
             <NavLink

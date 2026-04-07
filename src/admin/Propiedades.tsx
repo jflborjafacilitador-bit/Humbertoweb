@@ -2,8 +2,7 @@ import { useState, useEffect } from "react"
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore"
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"
 import { db, storage } from "../firebase/config"
-import { usePlacesWidget } from "react-google-autocomplete"
-
+import Autocomplete from "react-google-autocomplete"
 const AMENIDADES_DISPONIBLES = [
   "Alberca 🏊‍♀️", "Gimnasio 🏋️", "Seguridad 24/7 🛡️", "Roof Garden 🏙️", 
   "Elevador 🛗", "Amueblado 🛋️", "Balcón / Terraza 🌅", "Mascotas Permitidas 🐾", 
@@ -22,22 +21,13 @@ export default function Propiedades() {
   const [uploading, setUploading] = useState(false)
   const [imagenesArchivos, setImagenesArchivos] = useState<File[]>([])
 
-  const { ref: placesRef } = usePlacesWidget({
-    apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-    options: { types: ["geocode", "establishment"] },
-    onPlaceSelected: (place: any) => {
-      if (place && place.formatted_address) {
-        setFormData(prev => ({...prev, ubicacion: place.formatted_address}))
-      }
-    }
-  })
-
   const initialState = {
     nombre: "", precio: "", ubicacion: "", descripcion: "", recamaras: "0", banos: "0", 
     m2Terreno: "", m2Construccion: "", 
     salas: "0", comedores: "0", cocinas: "0", estacionamientos: "0",
     status: "Disponible", tipo: "Casa", operacion: "Venta", 
-    amenidades: [] as string[], imagenes: [] as string[]
+    amenidades: [] as string[], imagenes: [] as string[],
+    disponibleDesde: "", disponibleHasta: ""
   }
   const [formData, setFormData] = useState(initialState)
 
@@ -239,10 +229,34 @@ export default function Propiedades() {
                 </div>
               </div>
 
+              {formData.operacion === "Renta" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem", marginBottom: "0.5rem", padding: "1rem", background: "#EFF6FF", borderRadius: "8px", border: "1px dashed #BFDBFE" }}>
+                  <div>
+                    <label style={labelStyle}>Disponible Desde (Fecha)</label>
+                    <input type="date" style={inputStyle} value={formData.disponibleDesde || ""} onChange={e=>setFormData({...formData, disponibleDesde: e.target.value})} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Disponible Hasta (Fecha)</label>
+                    <input type="date" style={inputStyle} value={formData.disponibleHasta || ""} onChange={e=>setFormData({...formData, disponibleHasta: e.target.value})} />
+                  </div>
+                </div>
+              )}
+
               <h4 style={sectionTitleStyle}>2. Ubicación & Superficie</h4>
               <div style={{ marginBottom: "1rem" }}>
                 <label style={labelStyle}>Plaza / Ubicación Exacta (Motor de Google)</label>
-                <input ref={placesRef as any} style={inputStyle} value={formData.ubicacion} onChange={(e: any) => setFormData({...formData, ubicacion: e.target.value})} placeholder="Busca la colonia, calle o ciudad..." />
+                <Autocomplete
+                  apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""}
+                  onPlaceSelected={(place: any) => {
+                    if (place && place.formatted_address) {
+                      setFormData({...formData, ubicacion: place.formatted_address})
+                    }
+                  }}
+                  options={{ types: ["geocode", "establishment"] }}
+                  style={inputStyle}
+                  defaultValue={formData.ubicacion}
+                  placeholder="Busca la colonia, calle o ciudad..."
+                />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
                 <div>
@@ -283,7 +297,7 @@ export default function Propiedades() {
                 </div>
               </div>
 
-              <h4 style={sectionTitleStyle}>4. Amenidades y Extras (Modo Vela)</h4>
+              <h4 style={sectionTitleStyle}>4. Amenidades y Extras</h4>
               <p style={{ fontSize: "0.8rem", color: "#6B7280", margin: "-0.5rem 0 1rem 0" }}>Selecciona todas las amenidades con las que cuenta el desarrollo o propiedad.</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
                 {AMENIDADES_DISPONIBLES.map(am => {
