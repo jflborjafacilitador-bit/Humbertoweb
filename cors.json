@@ -3,7 +3,8 @@
     "origin": [
       "http://localhost:5299",
       "https://humbertoweb-8c17b.web.app",
-      "https://humbertoweb-8c17b.firebaseapp.com"
+      "https://humbertoweb-8c17b.firebaseapp.com",
+      "https://humberto.misasesoresinmobiliarios.com"
     ],
     "method": ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
     "maxAgeSeconds": 3600
