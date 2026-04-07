@@ -511,6 +511,36 @@ function PropertyModal({ prop, onClose, onContact }: { prop: any, onClose: () =>
             </div>
           )}
 
+          {/* Ver Ubicación */}
+          {prop.ubicacion && (
+            <div style={{ marginBottom: 16 }}>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(prop.ubicacion)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 16px', borderRadius: 10,
+                  background: '#F0FDF4', border: '1px solid #BBF7D0',
+                  color: '#15803D', fontWeight: 600, fontSize: '0.88rem',
+                  textDecoration: 'none', transition: 'all 0.2s',
+                  width: 'fit-content'
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#DCFCE7' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F0FDF4' }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                </svg>
+                Ver ubicación en Google Maps
+              </a>
+              <div style={{ fontSize: '0.78rem', color: '#9CA3AF', marginTop: 4, paddingLeft: 2 }}>
+                📍 {prop.ubicacion}
+              </div>
+            </div>
+          )}
+
           {/* CTA */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', minWidth: 160 }} onClick={() => { onClose(); onContact() }}>
