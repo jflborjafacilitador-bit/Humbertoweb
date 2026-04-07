@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- SEO -->
+    <title>Humberto Sotelo | Asesor Inmobiliario en México</title>
+    <meta name="description" content="Asesor inmobiliario profesional con más de 10 años de experiencia en toda la República Mexicana. Compra, venta y renta de propiedades. Contáctanos: +52 1 735 270 4429" />
+    <meta name="keywords" content="asesor inmobiliario, bienes raíces, México, casas en venta, departamentos, terrenos, propiedades, Humberto Sotelo" />
+    <meta name="author" content="Humberto Sotelo" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Humberto Sotelo | Asesor Inmobiliario" />
+    <meta property="og:description" content="Asesoría inmobiliaria personalizada de alto nivel en el Estado de México." />
+    <meta property="og:locale" content="es_MX" />
+
+    <!-- Fonts preload -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+
+    <!-- Cache Buster -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          let reloaded = false;
+          for(let registration of registrations) {
+            registration.unregister();
+            reloaded = true;
+          }
+          if (reloaded && !window.location.search.includes('cleared=1')) {
+            window.location.href = window.location.pathname + '?cleared=1';
+          }
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
