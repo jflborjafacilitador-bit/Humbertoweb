@@ -159,7 +159,7 @@ function Header({ onContactClick }: { onContactClick: () => void }) {
 /* =========================================================
    HERO
    ========================================================= */
-function Hero({ onContactClick }: { onContactClick: () => void }) {
+function Hero() {
   return (
     <section className="hero" id="inicio">
       <div className="hero-bg" />
@@ -698,7 +698,7 @@ export default function App() {
     <>
       <Header onContactClick={handleContactOpen} />
       <main>
-        <Hero onContactClick={handleContactOpen} />
+        <Hero />
         <Properties onContactClick={handleContactOpen} />
         <About />
         <CTABanner onContactClick={handleContactOpen} />
