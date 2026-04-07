@@ -136,10 +136,14 @@ export default function Propiedades() {
   const openForm = (prop?: any, tipoForzado?: "Venta" | "Evento") => {
     if (prop) {
       setEditingId(prop.id)
+      // Excluir campos no serializables de Firestore (Timestamp, id interno)
+      // para evitar React error #130 "Element type is invalid: got object"
+      const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...cleanProp } = prop
       setFormData({
-        ...initialState, ...prop,
-        amenidades: prop.amenidades || [],
-        diasDisponibles: prop.diasDisponibles || []
+        ...initialState, ...cleanProp,
+        amenidades: Array.isArray(prop.amenidades) ? prop.amenidades : [],
+        diasDisponibles: Array.isArray(prop.diasDisponibles) ? prop.diasDisponibles : [],
+        imagenes: Array.isArray(prop.imagenes) ? prop.imagenes : []
       })
     } else {
       setEditingId(null)
