@@ -719,13 +719,16 @@ function Properties({ onContactClick }: { onContactClick: () => void }) {
                     >
                       Ver Detalle
                     </button>
-                    <button
-                      className="btn btn-outline"
-                      style={{ flex: 1, justifyContent: 'center', fontSize: '0.8rem', padding: '0.6rem' }}
-                      onClick={(e) => { e.stopPropagation(); onContactClick() }}
+                    <a
+                      className="btn btn-whatsapp"
+                      href={`https://wa.me/527352704429?text=Hola%20Humberto%2C%20me%20interesa%20la%20propiedad%3A%20${encodeURIComponent(p.nombre || p.name || '')}%2C%20%C2%BFme%20puede%20dar%20m%C3%A1s%20informaci%C3%B3n%3F`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ flex: 1, justifyContent: 'center', fontSize: '0.8rem', padding: '0.6rem', textDecoration: 'none' }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      Contactar
-                    </button>
+                      <WhatsAppIcon /> Contactar
+                    </a>
                   </div>
                 </div>
               </div>

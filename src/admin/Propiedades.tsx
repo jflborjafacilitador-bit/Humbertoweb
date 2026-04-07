@@ -3,63 +3,56 @@ import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "fireb
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"
 import { db, storage } from "../firebase/config"
 
-// ─── Google Maps PlaceAutocompleteElement ────────────────────────────────────
+// ─── Input de Ubicación — siempre guarda, Google Autocomplete opcional ────────
 function PlacesInput({ value, onChange, style }: {
   value: string
   onChange: (address: string) => void
   style?: React.CSSProperties
 }) {
-  const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const [ready, setReady] = useState(false)
+  const autocompleteRef = useRef<any>(null)
 
+  // Intentar inicializar Google Autocomplete (viejo API que sí funciona en modo texto)
   useEffect(() => {
     let cleanup = false
-    const init = async () => {
-      const waitForGoogle = () => new Promise<void>((resolve) => {
-        if ((window as any).google?.maps?.importLibrary) return resolve()
-        const t = setInterval(() => {
-          if ((window as any).google?.maps?.importLibrary) { clearInterval(t); resolve() }
-        }, 200)
-      })
-      await waitForGoogle()
-      if (cleanup || !containerRef.current) return
+    const tryInit = () => {
+      if (cleanup || !inputRef.current) return
+      const g = (window as any).google
+      if (!g?.maps?.places?.Autocomplete) return
       try {
-        const { PlaceAutocompleteElement } = await (window as any).google.maps.importLibrary("places") as any
-        if (cleanup || !containerRef.current) return
-        const autocompleteEl = new PlaceAutocompleteElement({
-          types: ["geocode", "establishment"],
+        autocompleteRef.current = new g.maps.places.Autocomplete(inputRef.current, {
           componentRestrictions: { country: "mx" }
         })
-        containerRef.current.innerHTML = ""
-        containerRef.current.appendChild(autocompleteEl)
-        setReady(true)
-        autocompleteEl.addEventListener("gmp-placeselect", async (event: any) => {
+        autocompleteRef.current.addListener("place_changed", () => {
           if (cleanup) return
-          const { place } = event
-          await place.fetchFields({ fields: ["formattedAddress", "displayName"] })
-          onChange(place.formattedAddress || place.displayName?.text || "")
+          const place = autocompleteRef.current.getPlace()
+          const addr = place?.formatted_address || place?.name || inputRef.current?.value || ""
+          if (addr) onChange(addr)
         })
-      } catch (err) {
-        setReady(false)
-      }
+      } catch (_) { /* Google no disponible, el input manual funciona igual */ }
     }
-    init()
+
+    // Esperar a que Google Maps cargue
+    if ((window as any).google?.maps?.places) {
+      tryInit()
+    } else {
+      const t = setInterval(() => {
+        if ((window as any).google?.maps?.places) { clearInterval(t); tryInit() }
+      }, 500)
+      return () => { cleanup = true; clearInterval(t) }
+    }
     return () => { cleanup = true }
   }, [])
 
-  if (!ready && containerRef.current?.children.length === 0) {
-    return (
-      <input
-        ref={inputRef}
-        style={style}
-        defaultValue={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder="Ej: Colonia Las Brisas, Veracruz"
-      />
-    )
-  }
-  return <div ref={containerRef} style={{ width: "100%", minHeight: "42px" }} />
+  return (
+    <input
+      ref={inputRef}
+      style={style}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder="Ej: Av. Insurgentes Sur 123, Col. Del Valle, CDMX"
+    />
+  )
 }
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
