@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { collection, onSnapshot } from "firebase/firestore"
 import { db } from "./firebase/config"
 import './index.css'
@@ -161,7 +161,39 @@ function Header({ onContactClick }: { onContactClick: () => void }) {
 /* =========================================================
    HERO
    ========================================================= */
+function useCountUp(target: number, duration = 1500, active = false) {
+  const [count, setCount] = React.useState(0)
+  React.useEffect(() => {
+    if (!active) return
+    let start = 0
+    const step = target / (duration / 16)
+    const timer = setInterval(() => {
+      start += step
+      if (start >= target) { setCount(target); clearInterval(timer) }
+      else setCount(Math.floor(start))
+    }, 16)
+    return () => clearInterval(timer)
+  }, [active, target, duration])
+  return count
+}
+
 function Hero() {
+  const [statsVisible, setStatsVisible] = React.useState(false)
+  const statsRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setStatsVisible(true) },
+      { threshold: 0.4 }
+    )
+    if (statsRef.current) observer.observe(statsRef.current)
+    return () => observer.disconnect()
+  }, [])
+
+  const years = useCountUp(10, 1200, statsVisible)
+  const props = useCountUp(250, 1800, statsVisible)
+  const satisfaction = useCountUp(98, 1400, statsVisible)
+
   return (
     <section className="hero" id="inicio">
       <div className="hero-bg" />
@@ -193,25 +225,32 @@ function Hero() {
             </button>
             <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp btn-lg">
               <WhatsAppIcon />
-              {PHONE_DISPLAY}
+              Escríbenos ahora
             </a>
           </div>
 
-          <div className="hero-stats">
+          <div className="hero-stats" ref={statsRef}>
             <div>
-              <div className="hero-stat-number">10+</div>
+              <div className="hero-stat-number">{years}+</div>
               <div className="hero-stat-label">Años de experiencia</div>
             </div>
             <div>
-              <div className="hero-stat-number">250+</div>
+              <div className="hero-stat-number">{props}+</div>
               <div className="hero-stat-label">Propiedades vendidas</div>
             </div>
             <div>
-              <div className="hero-stat-number">98%</div>
+              <div className="hero-stat-number">{satisfaction}%</div>
               <div className="hero-stat-label">Clientes satisfechos</div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Wave divider */}
+      <div className="hero-wave">
+        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z" fill="#F5F5F0" />
+        </svg>
       </div>
     </section>
   )
@@ -302,14 +341,14 @@ function PropertyModal({ prop, onClose, onContact }: { prop: any, onClose: () =>
       style={{
         position: 'fixed', inset: 0, zIndex: 8000,
         background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '1rem', overflowY: 'auto'
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        padding: '2rem 1rem', overflowY: 'auto'
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{
         background: '#fff', borderRadius: 20, maxWidth: 900, width: '100%',
-        maxHeight: '90vh', overflowY: 'auto', position: 'relative',
+        position: 'relative', margin: 'auto',
         boxShadow: '0 30px 80px rgba(0,0,0,0.4)'
       }}>
         {/* Botón cerrar */}
@@ -323,11 +362,11 @@ function PropertyModal({ prop, onClose, onContact }: { prop: any, onClose: () =>
 
         {/* Galería principal */}
         {images.length > 0 ? (
-          <div style={{ position: 'relative', height: 380, overflow: 'hidden', borderRadius: '20px 20px 0 0' }}>
+          <div style={{ position: 'relative', background: '#111', borderRadius: '20px 20px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 280, maxHeight: 480 }}>
             <img
               src={images[imgIdx]}
               alt={`${prop.nombre || prop.name} foto ${imgIdx + 1}`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s' }}
+              style={{ width: '100%', maxHeight: 480, objectFit: 'contain', borderRadius: '20px 20px 0 0', display: 'block', transition: 'opacity 0.3s' }}
             />
             {/* Badge operación */}
             <span style={{
@@ -495,20 +534,72 @@ function PropertyModal({ prop, onClose, onContact }: { prop: any, onClose: () =>
 /* =========================================================
    PROPERTIES
    ========================================================= */
+const SearchIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+  </svg>
+)
+
+function PropertySkeleton() {
+  return (
+    <div className="property-skeleton">
+      <div className="skeleton-img" />
+      <div className="skeleton-body">
+        <div className="skeleton-line" />
+        <div className="skeleton-line medium" />
+        <div className="skeleton-line short" />
+      </div>
+    </div>
+  )
+}
+
+function FadeInCard({ children, delay = 0 }: { children: React.ReactNode, delay?: number }) {
+  const ref = React.useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = React.useState(false)
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
+      { threshold: 0.1 }
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [])
+  return (
+    <div ref={ref} className={`fade-in-card ${visible ? 'visible' : ''}`} style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  )
+}
+
 function Properties({ onContactClick }: { onContactClick: () => void }) {
   const [propiedadesDB, setPropiedadesDB] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedProp, setSelectedProp] = useState<any>(null)
+  const [activeFilter, setActiveFilter] = useState('Todos')
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "propiedades"), (snap) => {
       const data: any[] = []
       snap.forEach(doc => data.push({ id: doc.id, ...doc.data() }))
       setPropiedadesDB(data)
+      setLoading(false)
     })
     return unsub
   }, [])
 
-  const dataToShow = propiedadesDB.length > 0 ? propiedadesDB : PROPERTIES
+  const allData = propiedadesDB.length > 0 ? propiedadesDB : (loading ? [] : PROPERTIES)
+  const countAll = allData.length
+  const countVenta = allData.filter(p => (p.operacion || p.type) === 'Venta').length
+  const countRenta = allData.filter(p => (p.operacion || p.type) === 'Renta').length
+
+  const filtered = activeFilter === 'Todos' ? allData
+    : allData.filter(p => (p.operacion || p.type) === activeFilter)
+
+  const filters = [
+    { label: 'Todos', count: countAll },
+    { label: 'Venta', count: countVenta },
+    { label: 'Renta', count: countRenta },
+  ]
 
   return (
     <section className="section" id="propiedades">
@@ -524,17 +615,37 @@ function Properties({ onContactClick }: { onContactClick: () => void }) {
           </p>
         </div>
 
+        {/* Filtros con contador */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: 'var(--space-8)', flexWrap: 'wrap' }}>
+          {filters.map(f => (
+            <button
+              key={f.label}
+              className={`filter-btn ${activeFilter === f.label ? 'active' : ''}`}
+              onClick={() => setActiveFilter(f.label)}
+            >
+              {f.label}
+              <span className="filter-badge">{f.count}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="properties-grid">
-          {dataToShow.map((p) => {
+          {/* Skeleton mientras carga Firestore */}
+          {loading && [1,2,3].map(i => <PropertySkeleton key={i} />)}
+
+          {/* Tarjetas con fade-in y lupa en hover */}
+          {!loading && filtered.map((p, idx) => {
             const isRenta = (p.operacion || p.type) === "Renta"
             const images: string[] = p.imagenes && p.imagenes.length > 0 ? p.imagenes : (p.image ? [p.image] : [])
 
             return (
-              <div key={p.id} className="property-card" style={{ cursor: 'pointer' }} onClick={() => setSelectedProp(p)}>
-                {/* Carrusel de imágenes */}
-                <div className="property-card-image" style={{ position: 'relative' }}>
+              <FadeInCard key={p.id} delay={idx * 80}>
+              <div className="property-card" style={{ cursor: 'pointer' }} onClick={() => setSelectedProp(p)}>
+                {/* Carrusel + lupa hover */}
+                <div className="property-card-image prop-img-wrap" style={{ position: 'relative' }}>
                   <ImageCarousel images={images} alt={p.nombre || p.name || 'Propiedad'} />
                   <span className="property-card-badge">{p.operacion || p.type || "Venta"}</span>
+                  <div className="prop-img-overlay"><SearchIcon /></div>
                 </div>
 
                 <div className="property-card-body">
@@ -588,14 +699,21 @@ function Properties({ onContactClick }: { onContactClick: () => void }) {
                   </div>
                 </div>
               </div>
+              </FadeInCard>
             )
           })}
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 'var(--space-10)' }}>
-          <button className="btn btn-primary btn-lg" onClick={onContactClick}>
-            Ver Todo el Portafolio
-          </button>
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary btn-lg"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <WhatsAppIcon /> Ver Todo el Portafolio
+          </a>
         </div>
       </div>
 
@@ -672,9 +790,9 @@ function About() {
    ========================================================= */
 function CTABanner({ onContactClick }: { onContactClick: () => void }) {
   return (
-    <section className="section-alt">
+    <section className="section-alt" style={{ position: 'relative', zIndex: 5 }}>
       <div className="container">
-        <div className="cta-banner">
+        <div className="cta-banner" style={{ position: 'relative', zIndex: 5 }}>
           <p className="label-upper" style={{ position: 'relative' }}>Contáctanos Hoy</p>
           <div className="gold-divider" style={{ margin: 'var(--space-3) auto var(--space-4)' }} />
           <h2 className="display-md" style={{ position: 'relative', marginBottom: 'var(--space-3)' }}>
@@ -683,18 +801,83 @@ function CTABanner({ onContactClick }: { onContactClick: () => void }) {
           <p className="body-md text-muted" style={{ maxWidth: 480, margin: '0 auto', position: 'relative' }}>
             Déjanos tus datos y Humberto te contactará personalmente para asesorarte sin compromiso.
           </p>
-          <div className="cta-banner-buttons">
-            <button className="btn btn-primary btn-lg" onClick={onContactClick}>
-              Enviar Mensaje
-            </button>
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp btn-lg">
+          {/* CTA Principal: WhatsApp */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%', maxWidth: 520, margin: 'var(--space-8) auto 0', position: 'relative', zIndex: 10 }}>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                width: '100%', padding: '1rem 2rem', borderRadius: '14px',
+                background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: '1.1rem',
+                boxShadow: '0 8px 24px rgba(37,211,102,0.35)',
+                transition: 'all 0.25s ease',
+                animation: 'whatsapp-pulse 2.5s infinite'
+              }}
+              onMouseOver={e => {
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-2px)'
+                ;(e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 12px 32px rgba(37,211,102,0.5)'
+              }}
+              onMouseOut={e => {
+                (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'
+                ;(e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 8px 24px rgba(37,211,102,0.35)'
+              }}
+            >
               <WhatsAppIcon />
-              WhatsApp
+              Escríbenos por WhatsApp
             </a>
-            <a href={`mailto:${EMAIL}`} className="btn btn-outline btn-lg">
-              <EmailIcon />
-              Correo
-            </a>
+
+            {/* Secundarios */}
+            <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+              <button
+                onClick={onContactClick}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  padding: '0.85rem 1.25rem', borderRadius: '12px',
+                  background: '#D4AF37', color: '#fff', border: 'none',
+                  fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(212,175,55,0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={e => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'
+                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 20px rgba(212,175,55,0.45)'
+                }}
+                onMouseOut={e => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
+                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 14px rgba(212,175,55,0.3)'
+                }}
+              >
+                ✉️ Enviar Mensaje
+              </button>
+              <a
+                href={`mailto:${EMAIL}`}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  padding: '0.85rem 1.25rem', borderRadius: '12px',
+                  background: 'transparent', color: '#D4AF37',
+                  border: '1.5px solid #D4AF37', fontWeight: 600, fontSize: '0.9rem',
+                  textDecoration: 'none', transition: 'all 0.2s ease'
+                }}
+                onMouseOver={e => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.08)'
+                  ;(e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-2px)'
+                }}
+                onMouseOut={e => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'
+                  ;(e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'
+                }}
+              >
+                <EmailIcon /> Correo
+              </a>
+            </div>
+
+            {/* Texto de confianza */}
+            <p style={{ fontSize: '0.8rem', color: '#9CA3AF', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              🔒 Sin compromiso &nbsp;·&nbsp; ⚡ Respuesta en menos de 24 hrs
+            </p>
           </div>
         </div>
       </div>
@@ -1021,6 +1204,27 @@ function FloatingWhatsApp() {
 }
 
 /* =========================================================
+   SCROLL TO TOP
+   ========================================================= */
+function ScrollTopButton() {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 400)
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  return (
+    <button
+      className={`scroll-top-btn ${visible ? 'visible' : ''}`}
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      aria-label="Volver arriba"
+    >
+      ↑
+    </button>
+  )
+}
+
+/* =========================================================
    APP
    ========================================================= */
 export default function App() {
@@ -1046,6 +1250,7 @@ export default function App() {
       </main>
       <Footer onContactClick={handleContactOpen} />
       <FloatingWhatsApp />
+      <ScrollTopButton />
 
       {showContact && (
         <ContactForm onClose={handleContactClose} onSuccess={handleSuccess} />

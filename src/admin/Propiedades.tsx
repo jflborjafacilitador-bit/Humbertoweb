@@ -1,8 +1,56 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore"
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"
 import { db, storage } from "../firebase/config"
-import Autocomplete from "react-google-autocomplete"
+
+// Componente de autocompletado nativo — usa la API de Google Maps cargada en index.html
+function PlacesInput({ value, onChange, style, placeholder }: {
+  value: string
+  onChange: (address: string) => void
+  style?: React.CSSProperties
+  placeholder?: string
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const autocompleteRef = useRef<any>(null)
+
+  useEffect(() => {
+    const tryInit = () => {
+      if (!inputRef.current || !(window as any).google?.maps?.places) return
+      autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(
+        inputRef.current,
+        { types: ["geocode", "establishment"], componentRestrictions: { country: "mx" } }
+      )
+      autocompleteRef.current.addListener("place_changed", () => {
+        const place = autocompleteRef.current.getPlace()
+        if (place?.formatted_address) onChange(place.formatted_address)
+        else if (place?.name) onChange(place.name)
+      })
+    }
+
+    // Si ya cargó Google Maps, inicializar inmediatamente; si no, esperar
+    if ((window as any).google?.maps?.places) {
+      tryInit()
+    } else {
+      const interval = setInterval(() => {
+        if ((window as any).google?.maps?.places) {
+          clearInterval(interval)
+          tryInit()
+        }
+      }, 300)
+      return () => clearInterval(interval)
+    }
+  }, [])
+
+  return (
+    <input
+      ref={inputRef}
+      style={style}
+      defaultValue={value}
+      placeholder={placeholder}
+    />
+  )
+}
+
 const AMENIDADES_DISPONIBLES = [
   "Alberca 🏊‍♀️", "Gimnasio 🏋️", "Seguridad 24/7 🛡️", "Roof Garden 🏙️", 
   "Elevador 🛗", "Amueblado 🛋️", "Balcón / Terraza 🌅", "Mascotas Permitidas 🐾", 
@@ -26,8 +74,7 @@ export default function Propiedades() {
     m2Terreno: "", m2Construccion: "", 
     salas: "0", comedores: "0", cocinas: "0", estacionamientos: "0",
     status: "Disponible", tipo: "Casa", operacion: "Venta", 
-    amenidades: [] as string[], imagenes: [] as string[],
-    disponibleDesde: "", disponibleHasta: ""
+    amenidades: [] as string[], imagenes: [] as string[]
   }
   const [formData, setFormData] = useState(initialState)
 
@@ -229,32 +276,14 @@ export default function Propiedades() {
                 </div>
               </div>
 
-              {formData.operacion === "Renta" && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem", marginBottom: "0.5rem", padding: "1rem", background: "#EFF6FF", borderRadius: "8px", border: "1px dashed #BFDBFE" }}>
-                  <div>
-                    <label style={labelStyle}>Disponible Desde (Fecha)</label>
-                    <input type="date" style={inputStyle} value={formData.disponibleDesde || ""} onChange={e=>setFormData({...formData, disponibleDesde: e.target.value})} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Disponible Hasta (Fecha)</label>
-                    <input type="date" style={inputStyle} value={formData.disponibleHasta || ""} onChange={e=>setFormData({...formData, disponibleHasta: e.target.value})} />
-                  </div>
-                </div>
-              )}
 
-              <h4 style={sectionTitleStyle}>2. Ubicación & Superficie</h4>
+              <h4 style={sectionTitleStyle}>2. Ubicación &amp; Superficie</h4>
               <div style={{ marginBottom: "1rem" }}>
-                <label style={labelStyle}>Plaza / Ubicación Exacta (Motor de Google)</label>
-                <Autocomplete
-                  apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""}
-                  onPlaceSelected={(place: any) => {
-                    if (place && place.formatted_address) {
-                      setFormData({...formData, ubicacion: place.formatted_address})
-                    }
-                  }}
-                  options={{ types: ["geocode", "establishment"] }}
+                <label style={labelStyle}>Plaza / Ubicación Exacta (Google Maps)</label>
+                <PlacesInput
                   style={inputStyle}
-                  defaultValue={formData.ubicacion}
+                  value={formData.ubicacion}
+                  onChange={(address) => setFormData({...formData, ubicacion: address})}
                   placeholder="Busca la colonia, calle o ciudad..."
                 />
               </div>

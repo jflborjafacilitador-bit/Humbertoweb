@@ -5,9 +5,10 @@
 Este documento sirve como base de memoria si vas a trabajar con otro asistente de inteligencia artificial (Claude, ChatGPT, Cursor, etc.). Aliméntalo con este texto antes de pedirle cambios.
 
 ## 1. Despliegue y Entorno
-- **Despliegue Únicamente vía GitHub Actions:** El proyecto se sube y compila automáticamente hacia un servidor de Hostinger (`humberto.misasesoresinmobiliarios.com`) mediante Pushes a GitHub.
-- **NO pre-visualizar en el navegador localmente:** El usuario prefiere ver los cambios directo en la URL de producción o usar su monitor. No inyectar scripts que fuercen abrir ventanas (`open http://localhost...`).
-- **Enrutamiento Apache Hostinger:** Existe un archivo `public/.htaccess` ya configurado para evitar el error 404 al navegar a los diferentes componentes del panel `/admin`.
+- **Flujo de trabajo: Local primero, producción después.** El agente IA hace cambios en el código y el usuario los revisa en `localhost` (con `npm run dev` ya corriendo). El agente **NUNCA** hace `git commit` ni `git push` hasta que el usuario diga explícitamente "sube los cambios" o "despliega".
+- **Despliegue Únicamente vía GitHub Actions:** Cuando el usuario aprueba subir, se hace `git add . && git commit && git push` y GitHub Actions compila y despliega en Hostinger `humberto.misasesoresinmobiliarios.com` automáticamente.
+- **NO abrir navegadores:** El usuario ve los cambios en su propio monitor. No ejecutar comandos que fuercen abrir ventanas del explorador (`open http://localhost...`, `start http://...`, etc).
+- **Enrutamiento Apache Hostinger:** Existe un archivo `public/.htaccess` ya configurado para evitar el error 404 al navegar a sub-rutas como `/admin`.
 
 ## 2. Base de Datos e Inventario (Firebase)
 - Backend enteramente manejado desde Google Firebase (Firestore para base de datos y Storage para imágenes).
