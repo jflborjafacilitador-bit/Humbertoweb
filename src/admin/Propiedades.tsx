@@ -3,52 +3,79 @@ import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "fireb
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"
 import { db, storage } from "../firebase/config"
 
-// Componente de autocompletado nativo — usa la API de Google Maps cargada en index.html
-function PlacesInput({ value, onChange, style, placeholder }: {
+// Componente de autocompletado con la nueva API de Google Maps (PlaceAutocompleteElement)
+// Reemplaza el deprecado google.maps.places.Autocomplete para cuentas nuevas post-Mar 2025
+function PlacesInput({ value, onChange, style }: {
   value: string
   onChange: (address: string) => void
   style?: React.CSSProperties
-  placeholder?: string
 }) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const autocompleteRef = useRef<any>(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const tryInit = () => {
-      if (!inputRef.current || !(window as any).google?.maps?.places) return
-      autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(
-        inputRef.current,
-        { types: ["geocode", "establishment"], componentRestrictions: { country: "mx" } }
-      )
-      autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current.getPlace()
-        if (place?.formatted_address) onChange(place.formatted_address)
-        else if (place?.name) onChange(place.name)
+    let cleanup = false
+
+    const init = async () => {
+      // Esperar a que el loader de Google Maps esté disponible
+      const waitForGoogle = () => new Promise<void>((resolve) => {
+        if ((window as any).google?.maps?.importLibrary) return resolve()
+        const t = setInterval(() => {
+          if ((window as any).google?.maps?.importLibrary) { clearInterval(t); resolve() }
+        }, 200)
       })
+
+      await waitForGoogle()
+      if (cleanup || !containerRef.current) return
+
+      try {
+        // Cargar la librería Places con la nueva API
+        const { PlaceAutocompleteElement } = await (window as any).google.maps.importLibrary("places") as any
+
+        if (cleanup || !containerRef.current) return
+
+        // Crear el elemento web component oficial de Google
+        const autocompleteEl = new PlaceAutocompleteElement({
+          types: ["geocode", "establishment"],
+          componentRestrictions: { country: "mx" }
+        })
+
+        containerRef.current.innerHTML = ""
+        containerRef.current.appendChild(autocompleteEl)
+        setReady(true)
+
+        // Escuchar la selección del lugar
+        autocompleteEl.addEventListener("gmp-placeselect", async (event: any) => {
+          if (cleanup) return
+          const { place } = event
+          await place.fetchFields({ fields: ["formattedAddress", "displayName"] })
+          onChange(place.formattedAddress || place.displayName?.text || "")
+        })
+      } catch (err) {
+        console.warn("PlaceAutocompleteElement no disponible, usando input manual:", err)
+        setReady(false)
+      }
     }
 
-    // Si ya cargó Google Maps, inicializar inmediatamente; si no, esperar
-    if ((window as any).google?.maps?.places) {
-      tryInit()
-    } else {
-      const interval = setInterval(() => {
-        if ((window as any).google?.maps?.places) {
-          clearInterval(interval)
-          tryInit()
-        }
-      }, 300)
-      return () => clearInterval(interval)
-    }
+    init()
+    return () => { cleanup = true }
   }, [])
 
-  return (
-    <input
-      ref={inputRef}
-      style={style}
-      defaultValue={value}
-      placeholder={placeholder}
-    />
-  )
+  // Fallback: input controlado si Google no carga
+  if (!ready && containerRef.current?.children.length === 0) {
+    return (
+      <input
+        ref={inputRef}
+        style={style}
+        defaultValue={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="Ej: Colonia Las Brisas, Veracruz"
+      />
+    )
+  }
+
+  return <div ref={containerRef} style={{ width: "100%", minHeight: "42px" }} />
 }
 
 const AMENIDADES_DISPONIBLES = [
@@ -284,7 +311,6 @@ export default function Propiedades() {
                   style={inputStyle}
                   value={formData.ubicacion}
                   onChange={(address) => setFormData({...formData, ubicacion: address})}
-                  placeholder="Busca la colonia, calle o ciudad..."
                 />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
